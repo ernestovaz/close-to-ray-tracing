@@ -3,8 +3,8 @@
 #include "Application/Window.h"
 
 int main() {
-    Window window(360, 360, "render");
+    Window window;
     while(!window.shouldClose()){
-        window.pollEvents();
+        window.draw();
     }
 }

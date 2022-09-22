@@ -2,23 +2,25 @@
 
 #include <string>
 
+#define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 using std::string;
 
 class Window {
 public:
-    int width;
-    int height;
-    string name;
 
-    Window(int width, int height, string name);
+    Window();
     ~Window();
 
     bool shouldClose();
-    void pollEvents();
+    void draw();
 
 private:
     GLFWwindow* window;
-    void init();
+    void initWindow();
+    void swapChainResize();
+    void render();
+    void cleanup();
 };
