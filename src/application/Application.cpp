@@ -35,9 +35,11 @@ bool Application::init() {
 
 void Application::display(Image image) {
     auto pixels = new uint32_t[WIDTH * HEIGHT];
-    for(int x=0; x<WIDTH; x++) {
-        for(int y=0; y<HEIGHT; y++){
-            pixels[(y*WIDTH)+x] = image[x][y].toInt();
+    for(int y=0; y<HEIGHT; y++) {
+        for(int x=0; x<WIDTH; x++){
+            //flip texture vertically to correct UV coordinates
+            Color color = image[x][HEIGHT - y - 1];
+            pixels[(y*WIDTH)+x] = color.toInt();
         }
     }
     SDL_UpdateTexture(texture, nullptr, pixels, WIDTH * sizeof(uint32_t));

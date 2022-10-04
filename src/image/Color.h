@@ -8,7 +8,7 @@ public:
     double green;
     double blue;
 
-    Color() = default;
+    Color():red(0), green(0), blue(0){}
     Color(double red, double green, double blue);
     uint32_t toInt() const;
 };
