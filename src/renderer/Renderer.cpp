@@ -5,14 +5,15 @@ using glm::vec3;
 using glm::dot;
 using glm::normalize;
 
-Image Renderer::render() {
-    Image image(480, 480);
-    for(int y=0; y<480; y++){
-        for(int x=0; x<480; x++){
+Image Renderer::render(float width, float height) {
+    Image image(width, height);
+    for(int y=0; y<height; y++){
+        for(int x=0; x<width; x++){
             //clip to [0,1]
-            vec2 coordinate(x/480.0f, y/480.0f);
+            vec2 coordinate(x/width, y/height);
             //translate to [-1,1]
             coordinate = coordinate * 2.0f - 1.0f;
+            coordinate.x *= width/height;
 
             image[x][y] = shadePixel(coordinate);
         }

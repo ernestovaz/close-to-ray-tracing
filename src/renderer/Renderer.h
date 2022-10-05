@@ -8,7 +8,7 @@ using glm::vec2;
 
 class Renderer {
 public:
-    Image render();
+    Image render(float width, float height);
 
 private:
     Color shadePixel(vec2 coordinate);

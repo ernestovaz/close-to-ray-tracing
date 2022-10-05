@@ -1,10 +1,9 @@
+#include <iostream>
 #include "Application.h"
-#include <cstdio>
 
-#define WIDTH 480
-#define HEIGHT 480
+Application::Application(int width, int height)
+: width(width), height(height) {
 
-Application::Application() {
     window = nullptr;
     texture = nullptr;
     displayRenderer = nullptr;
@@ -22,38 +21,45 @@ bool Application::init() {
 
     window = SDL_CreateWindow("Render",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            480, 480, SDL_WINDOW_SHOWN);
+            480, 480, SDL_WINDOW_RESIZABLE);
 
     if(window == nullptr) return false;
 
-    displayRenderer = SDL_CreateRenderer(window, -1, 0);
+    displayRenderer = SDL_CreateRenderer(
+            window, -1,SDL_RENDERER_PRESENTVSYNC |
+            SDL_RENDERER_ACCELERATED);
     running = true;
 
     initTexture();
+    lastFrameTime = SDL_GetTicks();
+
     return true;
 }
 
 void Application::display(Image image) {
-    auto pixels = new uint32_t[WIDTH * HEIGHT];
-    for(int y=0; y<HEIGHT; y++) {
-        for(int x=0; x<WIDTH; x++){
+    auto pixels = new uint32_t[image.width * image.height];
+    for(int y=0; y < image.height; y++) {
+        for(int x=0; x < image.width; x++){
             //flip texture vertically to correct UV coordinates
-            Color color = image[x][HEIGHT - y - 1];
-            pixels[(y*WIDTH)+x] = color.toInt();
+            Color color = image[x][image.height - y - 1];
+            pixels[(y*image.width) + x] = color.toInt();
         }
     }
-    SDL_UpdateTexture(texture, nullptr, pixels, WIDTH * sizeof(uint32_t));
+    SDL_UpdateTexture(texture, nullptr, pixels, image.width * sizeof(uint32_t));
     delete[] pixels;
 
-    SDL_Rect screen, bounds;
-    screen.x = 0;
-    screen.y = 0;
-    screen.w = WIDTH;
-    screen.h = HEIGHT;
-    bounds = screen;
+    SDL_Rect source, destination;
+    source.x = 0;
+    source.y = 0;
+    source.w = image.width;
+    source.h = image.height;
 
-    SDL_RenderCopy(displayRenderer, texture,
-                   &screen, &bounds);
+    destination.x = 0;
+    destination.y = 0;
+    destination.w = this->width;
+    destination.h = this->height;
+
+    SDL_RenderCopy(displayRenderer, texture,&source, &destination);
     SDL_RenderPresent(displayRenderer);
 }
 
@@ -69,7 +75,19 @@ void Application::pollEvents() {
 }
 
 void Application::handleEvent(SDL_Event *event) {
-    if(event->type == SDL_QUIT) running = false;
+    switch(event->type){
+        case SDL_QUIT:
+            running = false;
+            break;
+        case SDL_WINDOWEVENT:
+            if(event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
+                SDL_GetWindowSize(window, &width, &height);
+                deleteTexture();
+                initTexture();
+            }
+
+            break;
+    }
 }
 
 void Application::clear() {
@@ -84,9 +102,14 @@ void Application::initTexture() {
     BMask = 0x00ff0000;
     AMask = 0xff000000;
 
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32,
-        RMask, GMask, BMask, AMask);
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height,
+        32,RMask, GMask, BMask, AMask);
 
     texture = SDL_CreateTextureFromSurface(displayRenderer, surface);
     SDL_FreeSurface(surface);
+}
+
+void Application::deleteTexture() {
+    if(texture != nullptr)
+        SDL_DestroyTexture(texture);
 }

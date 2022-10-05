@@ -6,7 +6,9 @@
 
 class Application {
 public:
-    Application();
+    int width, height;
+
+    Application(int width, int height);
     ~Application();
     bool init();
     bool isRunning();
@@ -16,11 +18,13 @@ public:
 
 private:
     bool running = false;
+    uint32_t lastFrameTime;
 
     SDL_Window* window;
     SDL_Renderer* displayRenderer;
     SDL_Texture* texture;
 
     void handleEvent(SDL_Event* event);
+    void deleteTexture();
     void initTexture();
 };

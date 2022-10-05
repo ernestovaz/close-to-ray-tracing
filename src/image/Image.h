@@ -9,11 +9,12 @@ using std::size_t;
 
 class Image {
 public:
+    int width, height;
+
     Image(int width, int height);
     Color& at(int x, int y);
 
 private:
-    int width, height;
     vector<vector<Color>> data;
 
 // proxy subclass for accessing image pixel with brackets
