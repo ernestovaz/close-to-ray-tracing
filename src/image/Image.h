@@ -13,6 +13,7 @@ public:
 
     Image(int width, int height);
     Color& at(int x, int y);
+    void resize(int width, int height);
 
 private:
     vector<vector<Color>> data;
