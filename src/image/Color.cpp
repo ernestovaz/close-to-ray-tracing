@@ -5,7 +5,9 @@
 using glm::min;
 using glm::max;
 
-const Color Color::WHITE = Color(255.0f, 255.0f, 255.0f);
+const Color Color::WHITE    = Color(255.0f, 255.0f, 255.0f);
+const Color Color::PURPLE   = Color(141.0f, 89.0f, 194.0f);
+const Color Color::GREEN   = Color(107.0f, 194.0f, 89.0f);
 
 Color::Color(double red, double green, double blue)
         : red(red), green(green), blue(blue) {}

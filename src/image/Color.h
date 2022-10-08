@@ -8,6 +8,8 @@ using glm::vec3;
 class Color {
 public:
     static const Color WHITE;
+    static const Color PURPLE;
+    static const Color GREEN;
 
     double red;
     double green;

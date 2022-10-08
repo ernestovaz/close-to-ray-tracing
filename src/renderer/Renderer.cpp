@@ -5,8 +5,13 @@
 using glm::vec3;
 using glm::vec4;
 using glm::max;
+using glm::min;
 using glm::dot;
 using glm::normalize;
+using glm::sqrt;
+using glm::length;
+
+#define DISTANCE_FACTOR 0.1f
 
 Renderer::Renderer() :
     width(480), height(480), image(width, height), camera() {
@@ -74,13 +79,17 @@ Color Renderer::traceRay(vec2 pixelCoordinate) {
 Color Renderer::applyShading(vec3 position, vec3 normal, Reflectance reflectance) {
     Color shaded = Color();
     for(Light light : lights) {
-        vec3 lightDirection = normalize(light.position - position);
-        Color shading = reflectance.diffuse * light.color;
+        vec3 lightDirection = light.position - position;
+
+        float distance = length(lightDirection);
+        float attenuation = min(1.0f, 1.0f/(distance * distance * DISTANCE_FACTOR));
+
+        float intensity = dot(normal, normalize(lightDirection));
+
+        Color shading = attenuation * intensity * reflectance.diffuse * light.color;
         shading.clamp();
 
-        float intensity = dot(normal, lightDirection);
-
-        shaded += shading * intensity;
+        shaded += shading;
     }
 
     shaded.clamp();
@@ -121,21 +130,22 @@ void Renderer::addSceneObjects() {
 
     center = vec3(0.0f);
     radius = 0.2f;
-    diffuseReflectance = Color(75.0f, 41.0f, 89.0f);
+    diffuseReflectance = Color::PURPLE;
     Object* purple = new Sphere(center, radius, diffuseReflectance);
 
     center = vec3(-0.5f, 0.0f, -1.0f);
     radius = 0.2f;
-    diffuseReflectance = Color(0.0f, 75.0f, 41.0f);
-    Object* green = new Sphere(center, radius, diffuseReflectance);
+    diffuseReflectance = Color::WHITE;
+    Object* white = new Sphere(center, radius, diffuseReflectance);
 
     scene.push_back(purple);
-    scene.push_back(green);
+    scene.push_back(white);
 }
 
 void Renderer::addSceneLights() {
-    Light spotlight = {Color::WHITE, camera.getPosition()};
-    spotlight.position.y += 1.0f;
+    Light spotlight = {Color::PURPLE, camera.getPosition()};
+    spotlight.position.y += 3.0f;
+    spotlight.position.z += 1.0f;
 
     lights.push_back(spotlight);
 }
