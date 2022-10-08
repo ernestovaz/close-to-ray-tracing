@@ -10,9 +10,10 @@ Renderer::Renderer() :
     width(480), height(480), image(width, height), camera() {
     updateView();
     updateProjection();
+    addSceneObjects();
 }
 
-Image Renderer::render(float width, float height) {
+const Image& Renderer::produceImage(float width, float height) {
 
     if(this->width != width || this->height != height){
         onResize(width, height);
@@ -36,21 +37,23 @@ Image Renderer::render(float width, float height) {
 
 Color Renderer::traceRay(vec2 pixelCoordinate) {
     vec3 projectedPixel = perspectiveDivide(project(pixelCoordinate));
+    vec3 direction = globalPosition(projectedPixel);
 
-    vec3 rayOrigin = camera.getPosition();
-    vec3 rayDirection = globalPosition(projectedPixel);
+    Ray ray(camera.getPosition(), direction);
 
-    float sphereRadius = 0.5f;
-
-    //quadratic formula
-    float a = dot(rayDirection, rayDirection);
-    float b = 2.0f * dot(rayOrigin, rayDirection);
-    float c = dot(rayOrigin, rayOrigin) - (sphereRadius * sphereRadius);
-
-    float discriminant = b * b - 4.0f * a * c;
-    if(discriminant >= 0.0f) //has solution
-        return {75.0f, 41.0f, 89.0f};
-    else return {};
+    Sphere* closestHit = nullptr;
+    float closestDistance = FLT_MAX;
+    for(Sphere& sphere : objects) {
+        float hit = sphere.getIntersection(ray);
+        if(hit >= 0 && hit < closestDistance){
+            closestDistance = hit;
+            closestHit = &sphere;
+        }
+    }
+    if(closestHit != nullptr) {
+        return closestHit->diffuseReflectance;
+    }
+    return {};
 }
 
 void Renderer::onResize(int width, int height) {
@@ -78,4 +81,19 @@ vec3 Renderer::perspectiveDivide(vec4 projected) {
 
 vec3 Renderer::globalPosition(vec3 positionFromCamera) {
     return inverseView * vec4(positionFromCamera, 0.0f);
+}
+
+void Renderer::addSceneObjects() {
+    Sphere purple;
+    purple.center = vec3(0.0f);
+    purple.radius = 0.2f;
+    purple.diffuseReflectance = Color(75.0f, 41.0f, 89.0f);
+
+    Sphere green;
+    green.center = vec3(-0.5f, 0.0f, -1.0f);
+    green.radius = 0.2f;
+    green.diffuseReflectance = Color(0.0f, 75.0f, 41.0f);
+
+    objects.push_back(purple);
+    objects.push_back(green);
 }

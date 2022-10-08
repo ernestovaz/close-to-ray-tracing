@@ -20,7 +20,7 @@ int main() {
 
     while(application.isRunning()){
         application.pollEvents();
-        Image image = renderer.render(
+        Image image = renderer.produceImage(
                 application.width,
                 application.height
         );
