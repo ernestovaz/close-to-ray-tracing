@@ -4,11 +4,14 @@
 
 using glm::dot;
 using glm::sqrt;
+using glm::normalize;
 
 Sphere::Sphere(vec3 center, float radius, Color diffuse)
-: center(center), radius(radius), diffuseReflectance(diffuse) {}
+: center(center), radius(radius){
+   reflectance.diffuse = diffuse;
+}
 
-float Sphere::getIntersection(Ray ray) {
+HitPayload Sphere::getIntersection(Ray ray) {
     vec3 direction = ray.direction;
     vec3 origin = ray.origin - center;
 
@@ -19,8 +22,17 @@ float Sphere::getIntersection(Ray ray) {
 
     float discriminant = b * b - 4.0f * a * c;
     if(discriminant < 0.0f)
-        return -1; // no solution
+        return {}; // no solution
 
     float closestHit = (-b - sqrt(discriminant))/(2.0f * a);
-    return closestHit;
+    vec3 surfacePosition = origin + ray.direction * closestHit;
+
+    HitPayload payload;
+    payload.hit = true;
+    payload.hitDistance = closestHit;
+    payload.position = surfacePosition + center;
+    payload.normal = normalize(surfacePosition);
+    payload.reflectance = reflectance;
+
+    return payload;
 }

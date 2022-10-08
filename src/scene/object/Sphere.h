@@ -4,16 +4,19 @@
 
 #include "../../image/Color.h"
 #include "../../math/Ray.h"
+#include "Object.h"
 
 using glm::vec3;
 
-class Sphere {
+class Sphere : public Object{
 public:
-    vec3 center;
-    float radius;
-    Color diffuseReflectance;
-
     Sphere(): center(0.0f), radius(1.0f){};
     Sphere(vec3 center, float radius, Color diffuse);
-    float getIntersection(Ray ray);
+    ~Sphere() override = default;
+
+    HitPayload getIntersection(Ray ray) override;
+
+private:
+    vec3 center;
+    float radius;
 };

@@ -1,8 +1,10 @@
 #include "Renderer.h"
+#include "../scene/object/Sphere.h"
 #include <glm/glm.hpp>
 
 using glm::vec3;
 using glm::vec4;
+using glm::max;
 using glm::dot;
 using glm::normalize;
 
@@ -11,6 +13,12 @@ Renderer::Renderer() :
     updateView();
     updateProjection();
     addSceneObjects();
+    addSceneLights();
+}
+
+Renderer::~Renderer() {
+    for(Object* object : scene)
+        delete object;
 }
 
 const Image& Renderer::produceImage(float width, float height) {
@@ -41,19 +49,42 @@ Color Renderer::traceRay(vec2 pixelCoordinate) {
 
     Ray ray(camera.getPosition(), direction);
 
-    Sphere* closestHit = nullptr;
+    Object* closestHit = nullptr;
     float closestDistance = FLT_MAX;
-    for(Sphere& sphere : objects) {
-        float hit = sphere.getIntersection(ray);
-        if(hit >= 0 && hit < closestDistance){
-            closestDistance = hit;
-            closestHit = &sphere;
+    HitPayload hitPayload;
+
+    for(Object* object : scene) {
+        HitPayload payload = object->getIntersection(ray);
+        if(payload.hit && payload.hitDistance < closestDistance){
+            closestDistance = payload.hitDistance;
+            closestHit = object;
+            hitPayload = payload;
         }
     }
     if(closestHit != nullptr) {
-        return closestHit->diffuseReflectance;
+        vec3 position = hitPayload.position;
+        vec3 normal = hitPayload.normal;
+        Reflectance reflectance = hitPayload.reflectance;
+
+        return applyShading(position, normal, reflectance);
     }
     return {};
+}
+
+Color Renderer::applyShading(vec3 position, vec3 normal, Reflectance reflectance) {
+    Color shaded = Color();
+    for(Light light : lights) {
+        vec3 lightDirection = normalize(light.position - position);
+        Color shading = reflectance.diffuse * light.color;
+        shading.clamp();
+
+        float intensity = dot(normal, lightDirection);
+
+        shaded += shading * intensity;
+    }
+
+    shaded.clamp();
+    return shaded;
 }
 
 void Renderer::onResize(int width, int height) {
@@ -84,16 +115,27 @@ vec3 Renderer::globalPosition(vec3 positionFromCamera) {
 }
 
 void Renderer::addSceneObjects() {
-    Sphere purple;
-    purple.center = vec3(0.0f);
-    purple.radius = 0.2f;
-    purple.diffuseReflectance = Color(75.0f, 41.0f, 89.0f);
+    vec3 center;
+    float radius;
+    Color diffuseReflectance;
 
-    Sphere green;
-    green.center = vec3(-0.5f, 0.0f, -1.0f);
-    green.radius = 0.2f;
-    green.diffuseReflectance = Color(0.0f, 75.0f, 41.0f);
+    center = vec3(0.0f);
+    radius = 0.2f;
+    diffuseReflectance = Color(75.0f, 41.0f, 89.0f);
+    Object* purple = new Sphere(center, radius, diffuseReflectance);
 
-    objects.push_back(purple);
-    objects.push_back(green);
+    center = vec3(-0.5f, 0.0f, -1.0f);
+    radius = 0.2f;
+    diffuseReflectance = Color(0.0f, 75.0f, 41.0f);
+    Object* green = new Sphere(center, radius, diffuseReflectance);
+
+    scene.push_back(purple);
+    scene.push_back(green);
+}
+
+void Renderer::addSceneLights() {
+    Light spotlight = {Color::WHITE, camera.getPosition()};
+    spotlight.position.y += 1.0f;
+
+    lights.push_back(spotlight);
 }
