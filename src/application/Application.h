@@ -18,7 +18,6 @@ public:
 
 private:
     bool running = false;
-    uint32_t lastFrameTime;
 
     SDL_Window* window;
     SDL_Renderer* displayRenderer;

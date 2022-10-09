@@ -1,5 +1,11 @@
 #include <iostream>
 #include "Application.h"
+#include "imgui/imgui_impl_sdlrenderer.h"
+
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_sdl.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
 
 Application::Application(int width, int height)
 : width(width), height(height) {
@@ -30,8 +36,15 @@ bool Application::init() {
             SDL_RENDERER_ACCELERATED);
     running = true;
 
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
     initTexture();
-    lastFrameTime = SDL_GetTicks();
+
+    ImGui_ImplSDL2_InitForSDLRenderer(window, displayRenderer);
+    ImGui_ImplSDLRenderer_Init(displayRenderer);
 
     return true;
 }
@@ -59,8 +72,19 @@ void Application::display(Image image) {
     destination.w = this->width;
     destination.h = this->height;
 
+    ImGui_ImplSDLRenderer_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+    {
+        ImGui::Begin("window");
+        ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+        ImGui::End();
+    }
+    ImGui::Render();
     SDL_RenderCopy(displayRenderer, texture,&source, &destination);
+    ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
     SDL_RenderPresent(displayRenderer);
+
 }
 
 bool Application::isRunning() {
@@ -75,6 +99,7 @@ void Application::pollEvents() {
 }
 
 void Application::handleEvent(SDL_Event *event) {
+    ImGui_ImplSDL2_ProcessEvent(event);
     switch(event->type){
         case SDL_QUIT:
             running = false;
