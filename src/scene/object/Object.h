@@ -9,6 +9,10 @@ using glm::vec3;
 typedef struct material {
     Color diffuse;
     Color specular;
+    Color ambient;
+
+    float shininess;
+    float reflectivity;
 } Material;
 
 typedef struct hit_payload {

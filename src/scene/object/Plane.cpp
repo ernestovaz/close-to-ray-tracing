@@ -4,9 +4,9 @@
 
 using glm::dot;
 
-Plane::Plane(vec3 position, vec3 normal, Color diffuse)
+Plane::Plane(vec3 position, vec3 normal, Material material)
 : position(position), normal(normal) {
-    material.diffuse = diffuse;
+    this->material = material;
 }
 
 HitPayload Plane::getIntersection(Ray ray) {

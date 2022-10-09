@@ -10,6 +10,8 @@ using glm::max;
 using glm::min;
 using glm::dot;
 using glm::normalize;
+using glm::reflect;
+using glm::pow;
 using glm::sqrt;
 using glm::length;
 
@@ -89,7 +91,7 @@ Color Renderer::applyShading(HitPayload payload) {
         vec3 lightDirection = light.position - position;
 
         float distance = length(lightDirection);
-        lightDirection = normalize(lightDirection);
+        lightDirection = lightDirection/distance;
 
         bool occluded = false;
         Ray lightRay(position, lightDirection);
@@ -100,11 +102,18 @@ Color Renderer::applyShading(HitPayload payload) {
         }
         if(occluded) continue;
 
+        vec3 eye = normalize(camera.getPosition() - position);
+        vec3 reflection = reflect(-lightDirection, normal);
+
         float attenuation = min(1.0f, 1.0f/(distance * distance * DISTANCE_FACTOR));
 
-        float intensity = dot(normal, normalize(lightDirection));
+        Color ambient = light.color * material.ambient;
+        Color diffuse = material.diffuse *
+                dot(normal, normalize(lightDirection));
+        Color specular = material.specular *
+                pow(max(dot(eye, reflection), 0.0f), material.shininess);
 
-        Color shading = attenuation * intensity * material.diffuse * light.color;
+        Color shading = ambient + light.color * attenuation * (diffuse + specular);
         shading.clamp();
 
         shaded += shading;
@@ -144,24 +153,30 @@ vec3 Renderer::globalPosition(vec3 positionFromCamera) {
 void Renderer::addSceneObjects() {
     vec3 center;
     float radius;
-    Color diffuseReflectance;
+    Material material;
 
     center = vec3(0.2f, 0.1f, -1.0f);
     radius = 0.3f;
-    diffuseReflectance = Color::PURPLE;
-    Object* purple = new Sphere(center, radius, diffuseReflectance);
+
+    material.ambient = Color::PURPLE * 0.5f;
+    material.diffuse = Color::PURPLE;
+    material.specular = Color::WHITE;
+    material.shininess = 32;
+    Object* purple = new Sphere(center, radius, material);
 
     center = vec3(-0.35f, 0.0f, -1.0f);
     radius = 0.2f;
-    diffuseReflectance = Color::GREEN;
-    Object* white = new Sphere(center, radius, diffuseReflectance);
+    material.ambient = Color::GREEN * 0.5f;
+    material.diffuse = Color::GREEN;
+    Object* white = new Sphere(center, radius, material);
 
+    material.ambient = Color::GRAY * 0.2f;
+    material.diffuse = Color::GRAY;
     Object* plane = new Plane(
             vec3(0.0f, -0.2f, 0.0f),
             vec3(0.0, 1.0f, 0.0f),
-            Color::GRAY
+            material
     );
-
 
     sceneObjects.push_back(purple);
     sceneObjects.push_back(white);
@@ -170,9 +185,6 @@ void Renderer::addSceneObjects() {
 
 void Renderer::addSceneLights() {
     Light spotlight = {Color::WHITE, vec3(1.5f, 2.0f, -0.5f)};
-
-    lights.push_back(spotlight);
-    spotlight.position.x += -1.0f;
 
     lights.push_back(spotlight);
 }

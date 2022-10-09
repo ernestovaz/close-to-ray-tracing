@@ -6,9 +6,9 @@ using glm::dot;
 using glm::sqrt;
 using glm::normalize;
 
-Sphere::Sphere(vec3 center, float radius, Color diffuse)
-: center(center), radius(radius){
-    material.diffuse = diffuse;
+Sphere::Sphere(vec3 center, float radius, Material material)
+: center(center), radius(radius) {
+   this->material = material;
 }
 
 HitPayload Sphere::getIntersection(Ray ray) {
