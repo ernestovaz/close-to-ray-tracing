@@ -26,6 +26,7 @@ typedef struct hit_payload {
 
 class Object {
 public:
+    vec3 position;
     Material material;
 
     virtual ~Object() = default;

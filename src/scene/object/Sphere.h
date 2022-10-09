@@ -10,7 +10,8 @@ using glm::vec3;
 
 class Sphere : public Object{
 public:
-    Sphere(): center(0.0f), radius(1.0f){};
+
+    Sphere(): radius(1.0f){ position = vec3(0.0f); };
     Sphere(vec3 center, float radius, Material material);
     ~Sphere() override = default;
 
@@ -18,6 +19,5 @@ public:
     bool checkIntersection(Ray ray) override;
 
 private:
-    vec3 center;
     float radius;
 };

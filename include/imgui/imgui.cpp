@@ -6147,7 +6147,7 @@ if (pad_r > style.FramePadding.x)
 pad_r += g.Style.ItemInnerSpacing.x;
 if (style.WindowTitleAlign.x > 0.0f && style.WindowTitleAlign.x < 1.0f)
 {
-float centerness = ImSaturate(1.0f - ImFabs(style.WindowTitleAlign.x - 0.5f) * 2.0f); // 0.0f on either edges, 1.0f on center
+float centerness = ImSaturate(1.0f - ImFabs(style.WindowTitleAlign.x - 0.5f) * 2.0f); // 0.0f on either edges, 1.0f on position
 float pad_extend = ImMin(ImMax(pad_l, pad_r), title_bar_rect.GetWidth() - pad_l - pad_r - text_size.x);
 pad_l = ImMax(pad_l, pad_extend * centerness);
 pad_r = ImMax(pad_r, pad_extend * centerness);
@@ -9256,7 +9256,7 @@ ImGuiContext& g = *GImGui;
 SetScrollFromPosY(g.CurrentWindow, local_y, center_y_ratio);
 }
 
-// center_x_ratio: 0.0f left of last item, 0.5f horizontal center of last item, 1.0f right of last item.
+// center_x_ratio: 0.0f left of last item, 0.5f horizontal position of last item, 1.0f right of last item.
 void ImGui::SetScrollHereX(float center_x_ratio)
 {
 ImGuiContext& g = *GImGui;
@@ -9269,7 +9269,7 @@ SetScrollFromPosX(window, target_pos_x - window->Pos.x, center_x_ratio); // Conv
 window->ScrollTargetEdgeSnapDist.x = ImMax(0.0f, window->WindowPadding.x - spacing_x);
 }
 
-// center_y_ratio: 0.0f top of last item, 0.5f vertical center of last item, 1.0f bottom of last item.
+// center_y_ratio: 0.0f top of last item, 0.5f vertical position of last item, 1.0f bottom of last item.
 void ImGui::SetScrollHereY(float center_y_ratio)
 {
 ImGuiContext& g = *GImGui;
@@ -10005,7 +10005,7 @@ if (dby != 0.0f && dbx != 0.0f)
 dbx = (dbx / 1000.0f) + ((dbx > 0.0f) ? +1.0f : -1.0f);
 float dist_box = ImFabs(dbx) + ImFabs(dby);
 
-// Compute distance between centers (this is off by a factor of 2, but we only compare center distances with each other so it doesn't matter)
+// Compute distance between centers (this is off by a factor of 2, but we only compare position distances with each other so it doesn't matter)
 float dcx = (cand.Min.x + cand.Max.x) - (curr.Min.x + curr.Max.x);
 float dcy = (cand.Min.y + cand.Max.y) - (curr.Min.y + curr.Max.y);
 float dist_center = ImFabs(dcx) + ImFabs(dcy); // L1 metric (need this for our connectedness guarantee)
@@ -10031,7 +10031,7 @@ quadrant = ImGetDirQuadrantFromDelta(dcx, dcy);
 }
 else
 {
-// Degenerate case: two overlapping buttons with same center, break ties arbitrarily (note that LastItemId here is really the _previous_ item order, but it doesn't matter)
+// Degenerate case: two overlapping buttons with same position, break ties arbitrarily (note that LastItemId here is really the _previous_ item order, but it doesn't matter)
 quadrant = (g.LastItemData.ID < g.NavId) ? ImGuiDir_Left : ImGuiDir_Right;
 }
 
@@ -10072,7 +10072,7 @@ return true;
 }
 if (dist_box == result->DistBox)
 {
-// Try using distance between center points to break ties
+// Try using distance between position points to break ties
 if (dist_center < result->DistCenter)
 {
 result->DistCenter = dist_center;

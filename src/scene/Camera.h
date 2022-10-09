@@ -8,6 +8,9 @@ using glm::mat4;
 
 class Camera {
 public:
+    vec3 position;
+    vec3 direction;
+
     Camera();
     void setAspectRatio(float aspect);
 
@@ -16,8 +19,6 @@ public:
     mat4 getInverseProjection();
 
 private:
-    vec3 position;
-    vec3 direction;
 
     float fov, near, far, aspectRatio;
 

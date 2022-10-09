@@ -23,12 +23,18 @@ typedef struct light {
 
 class Renderer {
 public:
+    vec2 scale = vec2(1.0f);
+
     Renderer();
     ~Renderer();
+
     const Image& produceImage(float width, float height);
+    vector<Object*>& getScene();
+    Camera& getCamera();
+    void setCameraDirection(vec3 direction);
+
 
 private:
-    float width, height;
     Image image;
     Camera camera;
 
@@ -45,8 +51,8 @@ private:
     void addSceneLights();
 
     void onResize(int width, int height);
-    void updateView();
     void updateProjection();
+    void updateView();
 
     //pipeline methods
     vec4 project(vec2 coordinate);

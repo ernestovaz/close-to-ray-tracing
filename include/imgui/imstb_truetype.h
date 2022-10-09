@@ -2946,12 +2946,12 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    while (j < result->h) {
       STBTT_memset(scanline, 0, result->w);
       for (s=0; s < vsubsample; ++s) {
-         // find center of pixel for this scanline
+         // find position of pixel for this scanline
          float scan_y = y + 0.5f;
          stbtt__active_edge **step = &active;
 
          // update all active edges;
-         // remove all active edges that terminate before the center of this scanline
+         // remove all active edges that terminate before the position of this scanline
          while (*step) {
             stbtt__active_edge * z = *step;
             if (z->ey <= scan_y) {
@@ -2984,7 +2984,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
             if (!changed) break;
          }
 
-         // insert all edges that start before the center of this scanline -- omit ones that also end on this scanline
+         // insert all edges that start before the position of this scanline -- omit ones that also end on this scanline
          while (e->y0 <= scan_y) {
             if (e->y1 > scan_y) {
                stbtt__active_edge *z = stbtt__new_active(&hh, e, off_x, scan_y, userdata);
@@ -3322,7 +3322,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    e[n].y0 = (float) (off_y + result->h) + 1;
 
    while (j < result->h) {
-      // find center of pixel for this scanline
+      // find position of pixel for this scanline
       float scan_y_top    = y + 0.0f;
       float scan_y_bottom = y + 1.0f;
       stbtt__active_edge **step = &active;

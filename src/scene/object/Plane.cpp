@@ -5,7 +5,8 @@
 using glm::dot;
 
 Plane::Plane(vec3 position, vec3 normal, Material material)
-: position(position), normal(normal) {
+: normal(normal) {
+    this->position = position;
     this->material = material;
 }
 

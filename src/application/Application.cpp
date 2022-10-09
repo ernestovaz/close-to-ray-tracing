@@ -1,11 +1,20 @@
 #include <iostream>
+#include <string>
+
 #include "Application.h"
-#include "imgui/imgui_impl_sdlrenderer.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl.h>
+#include "imgui/imgui_impl_sdlrenderer.h"
+#include "../renderer/Renderer.h"
+#include "imgui/imgui_internal.h"
 #include <SDL.h>
 #include <SDL_opengl.h>
+
+#include <glm/gtc/type_ptr.hpp>
+using glm::value_ptr;
+using std::string;
+using std::to_string;
 
 Application::Application(int width, int height)
 : width(width), height(height) {
@@ -16,10 +25,15 @@ Application::Application(int width, int height)
 }
 
 Application::~Application() {
+    ImGui_ImplSDLRenderer_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
     SDL_DestroyRenderer(displayRenderer);
     SDL_DestroyWindow(window);
-    window = nullptr;
     SDL_Quit();
+
+    window = nullptr;
 }
 
 bool Application::init() {
@@ -36,15 +50,8 @@ bool Application::init() {
             SDL_RENDERER_ACCELERATED);
     running = true;
 
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-
-    initTexture();
-
-    ImGui_ImplSDL2_InitForSDLRenderer(window, displayRenderer);
-    ImGui_ImplSDLRenderer_Init(displayRenderer);
+    updateTexture(width, height);
+    initImGui();
 
     return true;
 }
@@ -58,6 +65,9 @@ void Application::display(Image image) {
             pixels[(y*image.width) + x] = color.toInt();
         }
     }
+    if(image.width != textureWidth || image.height != textureHeight)
+        updateTexture(image.width, image.height);
+
     SDL_UpdateTexture(texture, nullptr, pixels, image.width * sizeof(uint32_t));
     delete[] pixels;
 
@@ -72,18 +82,7 @@ void Application::display(Image image) {
     destination.w = this->width;
     destination.h = this->height;
 
-    ImGui_ImplSDLRenderer_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-    {
-        ImGui::Begin("window");
-        ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-        ImGui::End();
-    }
-    ImGui::Render();
     SDL_RenderCopy(displayRenderer, texture,&source, &destination);
-    ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
-    SDL_RenderPresent(displayRenderer);
 
 }
 
@@ -107,10 +106,7 @@ void Application::handleEvent(SDL_Event *event) {
         case SDL_WINDOWEVENT:
             if(event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
                 SDL_GetWindowSize(window, &width, &height);
-                deleteTexture();
-                initTexture();
             }
-
             break;
     }
 }
@@ -120,7 +116,10 @@ void Application::clear() {
     SDL_RenderClear(displayRenderer);
 }
 
-void Application::initTexture() {
+void Application::updateTexture(float width, float height) {
+    textureWidth = width;
+    textureHeight = height;
+
     uint32_t RMask, GMask, BMask, AMask;
     RMask = 0x000000ff;
     GMask = 0x0000ff00;
@@ -137,4 +136,97 @@ void Application::initTexture() {
 void Application::deleteTexture() {
     if(texture != nullptr)
         SDL_DestroyTexture(texture);
+}
+
+void Application::initImGui() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplSDL2_InitForSDLRenderer(window, displayRenderer);
+    ImGui_ImplSDLRenderer_Init(displayRenderer);
+
+}
+
+static bool firstMenuDraw = true;
+void Application::displayMenu(Renderer &renderer) {
+    ImGui_ImplSDLRenderer_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+    {
+        if(firstMenuDraw) {
+            ImGui::SetNextWindowCollapsed(true);
+            firstMenuDraw = false;
+        }
+        ImGui::Begin("Debug");
+
+        if(realTime) setMenuItemsFaded();
+        {
+            if (ImGui::Button("Draw")) drawSingleFrame = true;
+        }
+        if(realTime) unsetMenuItemsFaded();
+
+        ImGui::SameLine();
+        ImGui::Checkbox("Real Time", &realTime);
+        if(!realTime) setMenuItemsFaded();
+        {
+            ImGui::SameLine();
+            float fps;
+            if(realTime) fps = ImGui::GetIO().Framerate;
+            else fps = 0;
+            ImGui::Text("%.3f FPS", fps);
+        }
+        if(!realTime) unsetMenuItemsFaded();
+
+        ImGui::DragFloat2("Scale", value_ptr(renderer.scale), 0.01f, 0.0f, 1.0f);
+
+        vector<Object*> scene = renderer.getScene();
+        for(int i=0; i<scene.size(); i++){
+            Object* object = scene[i];
+            string label = "Shape " + to_string(i);
+            ImGui::DragFloat3(label.c_str(), value_ptr(object->position), 0.01f);
+        }
+        Camera& camera = renderer.getCamera();
+        ImGui::Text("Camera");
+        ImGui::DragFloat3("Position", value_ptr(camera.position), 0.01f);
+        //camera orientation
+        if(ImGui::ArrowButton("left", 0))
+            renderer.setCameraDirection(vec3(-1.0f, 0.0f, 0.0f));
+        ImGui::SameLine();
+        if(ImGui::ArrowButton("right", 1))
+            renderer.setCameraDirection(vec3(1.0f, 0.0f, 0.0f));
+        ImGui::SameLine();
+        if(ImGui::ArrowButton("front", 2))
+            renderer.setCameraDirection(vec3(0.0f, 0.0f, -1.0f));
+        ImGui::SameLine();
+        if(ImGui::ArrowButton("back", 3))
+            renderer.setCameraDirection(vec3(0.0f, 0.0f, 1.0f));
+        ImGui::SameLine();
+        ImGui::Text("Direction");
+
+
+        ImGui::End();
+    }
+    ImGui::Render();
+    ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Application::present() {
+    SDL_RenderPresent(displayRenderer);
+}
+
+void Application::setMenuItemsFaded() {
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+}
+
+void Application::unsetMenuItemsFaded() {
+    ImGui::PopItemFlag();
+    ImGui::PopStyleVar();
+}
+
+bool Application::shouldDraw() {
+    bool response = (drawSingleFrame || realTime);
+    if (drawSingleFrame) drawSingleFrame = false;
+    return response;
 }

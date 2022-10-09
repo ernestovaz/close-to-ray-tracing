@@ -18,7 +18,7 @@ using glm::length;
 #define DISTANCE_FACTOR 0.1f
 
 Renderer::Renderer() :
-    width(480), height(480), image(width, height), camera() {
+    image(480, 480), camera() {
     updateView();
     updateProjection();
     addSceneObjects();
@@ -30,9 +30,10 @@ Renderer::~Renderer() {
         delete object;
 }
 
-const Image& Renderer::produceImage(float width, float height) {
-
-    if(this->width != width || this->height != height){
+const Image& Renderer::produceImage(float imageWidth, float imageHeight) {
+    float width = floor(imageWidth * scale.x);
+    float height = floor(imageHeight * scale.y);
+    if(image.width != width || image.height != height){
         onResize(width, height);
     }
     updateProjection();
@@ -124,8 +125,6 @@ Color Renderer::applyShading(HitPayload payload) {
 }
 
 void Renderer::onResize(int width, int height) {
-    this->width = width;
-    this->height = height;
     image.resize(width, height);
     updateView();
 }
@@ -187,4 +186,17 @@ void Renderer::addSceneLights() {
     Light spotlight = {Color::WHITE, vec3(1.5f, 2.0f, -0.5f)};
 
     lights.push_back(spotlight);
+}
+
+vector<Object *> &Renderer::getScene() {
+    return sceneObjects;
+}
+
+Camera &Renderer::getCamera() {
+    return camera;
+}
+
+void Renderer::setCameraDirection(vec3 direction) {
+    camera.direction = direction;
+    updateView();
 }

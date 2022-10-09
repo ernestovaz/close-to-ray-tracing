@@ -7,13 +7,14 @@ using glm::sqrt;
 using glm::normalize;
 
 Sphere::Sphere(vec3 center, float radius, Material material)
-: center(center), radius(radius) {
-   this->material = material;
+: radius(radius) {
+    this->position = center;
+    this->material = material;
 }
 
 HitPayload Sphere::getIntersection(Ray ray) {
     vec3 direction = ray.direction;
-    vec3 origin = ray.origin - center;
+    vec3 origin = ray.origin - position;
 
     //quadratic formula
     float a = dot(direction, direction);
@@ -30,7 +31,7 @@ HitPayload Sphere::getIntersection(Ray ray) {
     HitPayload payload;
     payload.hit = true;
     payload.hitDistance = closestHit;
-    payload.position = surfacePosition + center;
+    payload.position = surfacePosition + position;
     payload.normal = normalize(surfacePosition);
     payload.material = material;
 
@@ -39,7 +40,7 @@ HitPayload Sphere::getIntersection(Ray ray) {
 
 bool Sphere::checkIntersection(Ray ray) {
     vec3 direction = ray.direction;
-    vec3 origin = ray.origin - center;
+    vec3 origin = ray.origin - position;
 
     //quadratic formula
     float a = dot(direction, direction);

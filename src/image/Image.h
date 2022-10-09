@@ -11,6 +11,7 @@ class Image {
 public:
     int width, height;
 
+    Image(){};
     Image(int width, int height);
     Color& at(int x, int y);
     void resize(int width, int height);

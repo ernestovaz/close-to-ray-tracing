@@ -13,6 +13,7 @@ using std::endl;
 int main() {
     Application application(INITIAL_WIDTH, INITIAL_HEIGHT);
     Renderer renderer;
+    Image* image = nullptr;
 
     if(!application.init()){
         cerr << "ERROR STARTING APPLICATION" << endl;
@@ -21,13 +22,21 @@ int main() {
 
     while(application.isRunning()){
         application.pollEvents();
-        Image image = renderer.produceImage(
-                application.width,
-                application.height
-        );
         application.clear();
-        application.display(image);
-    }
 
+        if(!image || application.shouldDraw()){
+            delete image;
+            image = new Image(renderer.produceImage(
+                    application.width,
+                    application.height
+            ));
+        }
+
+        application.display(*image);
+        application.displayMenu(renderer);
+
+        application.present();
+    }
+    delete image;
     return 0;
 }
