@@ -6,23 +6,26 @@
 
 using glm::vec3;
 
-typedef struct reflectance {
+typedef struct material {
     Color diffuse;
     Color specular;
-} Reflectance;
+} Material;
 
 typedef struct hit_payload {
     bool hit = false;
     float hitDistance;
     vec3 position;
     vec3 normal;
-    Reflectance reflectance;
+    Material material;
+    int objectIndex = -1;
 } HitPayload;
 
 class Object {
 public:
-    Reflectance reflectance;
+    Material material;
 
     virtual ~Object() = default;
+
     virtual HitPayload getIntersection(Ray ray) = 0;
+    virtual bool checkIntersection(Ray ray) = 0;
 };

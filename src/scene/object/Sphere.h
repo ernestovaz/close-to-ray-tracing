@@ -15,6 +15,7 @@ public:
     ~Sphere() override = default;
 
     HitPayload getIntersection(Ray ray) override;
+    bool checkIntersection(Ray ray) override;
 
 private:
     vec3 center;

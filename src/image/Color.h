@@ -10,6 +10,7 @@ public:
     static const Color WHITE;
     static const Color PURPLE;
     static const Color GREEN;
+    static const Color GRAY;
 
     double red;
     double green;

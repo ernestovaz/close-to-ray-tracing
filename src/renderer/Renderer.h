@@ -32,14 +32,14 @@ private:
     Image image;
     Camera camera;
 
-    vector<Object*> scene;
+    vector<Object*> sceneObjects;
     vector<Light> lights;
 
     mat4 inverseView;
     mat4 inverseProjection;
 
     Color traceRay(vec2 pixelCoordinate);
-    Color applyShading(vec3 position, vec3 normal, Reflectance reflectance);
+    Color applyShading(HitPayload payload);
 
     void addSceneObjects();
     void addSceneLights();

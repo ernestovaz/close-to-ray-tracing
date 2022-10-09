@@ -1,6 +1,8 @@
 #include "Renderer.h"
 #include "../scene/object/Sphere.h"
+#include "../scene/object/Plane.h"
 #include <glm/glm.hpp>
+#include <iostream>
 
 using glm::vec3;
 using glm::vec4;
@@ -22,7 +24,7 @@ Renderer::Renderer() :
 }
 
 Renderer::~Renderer() {
-    for(Object* object : scene)
+    for(Object* object : sceneObjects)
         delete object;
 }
 
@@ -58,35 +60,51 @@ Color Renderer::traceRay(vec2 pixelCoordinate) {
     float closestDistance = FLT_MAX;
     HitPayload hitPayload;
 
-    for(Object* object : scene) {
+    for(int i=0; i<sceneObjects.size(); i++){
+
+        Object* object = sceneObjects[i];
         HitPayload payload = object->getIntersection(ray);
         if(payload.hit && payload.hitDistance < closestDistance){
+            payload.objectIndex = i;
             closestDistance = payload.hitDistance;
             closestHit = object;
             hitPayload = payload;
         }
     }
     if(closestHit != nullptr) {
-        vec3 position = hitPayload.position;
-        vec3 normal = hitPayload.normal;
-        Reflectance reflectance = hitPayload.reflectance;
-
-        return applyShading(position, normal, reflectance);
+        return applyShading(hitPayload);
     }
     return {};
 }
 
-Color Renderer::applyShading(vec3 position, vec3 normal, Reflectance reflectance) {
+Color Renderer::applyShading(HitPayload payload) {
+    vec3 position = payload.position;
+    vec3 normal = payload.normal;
+    Material material = payload.material;
+    int objectIndex = payload.objectIndex;
+
     Color shaded = Color();
     for(Light light : lights) {
+
         vec3 lightDirection = light.position - position;
 
         float distance = length(lightDirection);
+        lightDirection = normalize(lightDirection);
+
+        bool occluded = false;
+        Ray lightRay(position, lightDirection);
+        for(int i=0; i < sceneObjects.size() - 1; i++){
+            if(objectIndex == i) continue;
+            occluded = sceneObjects[i]->checkIntersection(lightRay);
+            if(occluded) break;
+        }
+        if(occluded) continue;
+
         float attenuation = min(1.0f, 1.0f/(distance * distance * DISTANCE_FACTOR));
 
         float intensity = dot(normal, normalize(lightDirection));
 
-        Color shading = attenuation * intensity * reflectance.diffuse * light.color;
+        Color shading = attenuation * intensity * material.diffuse * light.color;
         shading.clamp();
 
         shaded += shading;
@@ -128,24 +146,33 @@ void Renderer::addSceneObjects() {
     float radius;
     Color diffuseReflectance;
 
-    center = vec3(0.0f);
-    radius = 0.2f;
+    center = vec3(0.2f, 0.1f, -1.0f);
+    radius = 0.3f;
     diffuseReflectance = Color::PURPLE;
     Object* purple = new Sphere(center, radius, diffuseReflectance);
 
-    center = vec3(-0.5f, 0.0f, -1.0f);
+    center = vec3(-0.35f, 0.0f, -1.0f);
     radius = 0.2f;
-    diffuseReflectance = Color::WHITE;
+    diffuseReflectance = Color::GREEN;
     Object* white = new Sphere(center, radius, diffuseReflectance);
 
-    scene.push_back(purple);
-    scene.push_back(white);
+    Object* plane = new Plane(
+            vec3(0.0f, -0.2f, 0.0f),
+            vec3(0.0, 1.0f, 0.0f),
+            Color::GRAY
+    );
+
+
+    sceneObjects.push_back(purple);
+    sceneObjects.push_back(white);
+    sceneObjects.push_back(plane);
 }
 
 void Renderer::addSceneLights() {
-    Light spotlight = {Color::PURPLE, camera.getPosition()};
-    spotlight.position.y += 3.0f;
-    spotlight.position.z += 1.0f;
+    Light spotlight = {Color::WHITE, vec3(1.5f, 2.0f, -0.5f)};
+
+    lights.push_back(spotlight);
+    spotlight.position.x += -1.0f;
 
     lights.push_back(spotlight);
 }
