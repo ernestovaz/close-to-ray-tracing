@@ -24,7 +24,7 @@ typedef struct light {
 class Renderer {
 public:
     vec2 scale = vec2(1.0f);
-    uint recursionLimit = 2;
+    uint recursionLimit = 3;
 
     Renderer();
     ~Renderer();

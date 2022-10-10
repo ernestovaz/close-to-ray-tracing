@@ -66,10 +66,6 @@ Color Renderer::traceRay(Ray ray, int recursions) {
     for(int i=0; i<sceneObjects.size(); i++){
         Object* object = sceneObjects[i];
         HitPayload payload = object->getIntersection(ray);
-        if(i == 3 and recursions < recursionLimit and payload.hit){
-            volatile int a = 0;
-            a++;
-        }
         if(payload.hit && payload.hitDistance < closestDistance && payload.hitDistance >= 0.0f){
             payload.objectIndex = i;
             closestDistance = payload.hitDistance;
