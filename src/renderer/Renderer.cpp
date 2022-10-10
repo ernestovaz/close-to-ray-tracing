@@ -66,7 +66,11 @@ Color Renderer::traceRay(Ray ray, int recursions) {
     for(int i=0; i<sceneObjects.size(); i++){
         Object* object = sceneObjects[i];
         HitPayload payload = object->getIntersection(ray);
-        if(payload.hit && payload.hitDistance < closestDistance){
+        if(i == 3 and recursions < recursionLimit and payload.hit){
+            volatile int a = 0;
+            a++;
+        }
+        if(payload.hit && payload.hitDistance < closestDistance && payload.hitDistance >= 0.0f){
             payload.objectIndex = i;
             closestDistance = payload.hitDistance;
             closestHit = object;
@@ -76,7 +80,7 @@ Color Renderer::traceRay(Ray ray, int recursions) {
     if(closestHit != nullptr) {
         return applyShading(hitPayload, recursions);
     }
-    return Color::GRAY;
+    return Color::BLACK;
 }
 
 Color Renderer::applyShading(HitPayload payload, int recursions) {
@@ -98,7 +102,7 @@ Color Renderer::applyShading(HitPayload payload, int recursions) {
         Color ambient = light.color * material.ambient;
 
         vec3 eye = normalize(camera.getPosition() - position);
-        vec3 reflection = reflect(eye, normal);
+        vec3 reflection = reflect(-eye, normal);
         Color reflective;
         if(material.reflectivity > 0.0 and recursions > 0){
             recursions--;
@@ -197,8 +201,8 @@ void Renderer::addSceneObjects() {
     material.specular = Color::WHITE;
     Object* purple = new Sphere(right, radiusBig, material);
 
-    material.ambient = Color::BLACK;
-    material.diffuse = Color::DARK_GRAY * 0.1f;
+    material.ambient = Color::GRAY * 0.1f;
+    material.diffuse = Color::GRAY * 0.3f;
     material.reflectivity = 0.2f;
     Object* plane = new Plane(
             vec3(0.0f, -0.2f, 0.0f),

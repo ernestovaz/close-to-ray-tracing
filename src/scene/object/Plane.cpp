@@ -32,7 +32,8 @@ bool Plane::checkIntersection(Ray ray) {
     double denominator = dot(normal, ray.direction);
     if(fabs(denominator) > 1e-8f) {
         float hitDistance = dot((position - ray.origin), normal) / denominator;
-        if (hitDistance > 0.01f) return true;
+        if (hitDistance > 0.01f)
+            return true;
     }
     return false;
 }
