@@ -30,7 +30,7 @@ void Camera::setAspectRatio(float aspect) {
 }
 
 mat4 Camera::getInverseView() {
-    vec3 center = ORIGIN + direction;
+    vec3 center = position + direction;
     mat4 view = lookAt(position, center, UP_VECTOR);
     return inverse(view);
 }

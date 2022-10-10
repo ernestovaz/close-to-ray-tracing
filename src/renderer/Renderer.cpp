@@ -37,6 +37,7 @@ const Image& Renderer::produceImage(float imageWidth, float imageHeight) {
         onResize(width, height);
     }
     updateProjection();
+    updateView();
 
     for(int y=0; y<height; y++){
         for(int x=0; x<width; x++){
@@ -45,26 +46,24 @@ const Image& Renderer::produceImage(float imageWidth, float imageHeight) {
             //translate to [-1,1]
             coordinate = coordinate * 2.0f - 1.0f;
             coordinate.x *= width/height;
+            vec3 projectedPixel = perspectiveDivide(project(coordinate));
+            vec3 direction = globalPosition(projectedPixel);
+            Ray ray(camera.getPosition(), direction);
 
-            image[x][y] = traceRay(coordinate);
+            int recursions = recursionLimit;
+            image[x][y] = traceRay(ray, recursions);
         }
     }
 
     return image;
 }
 
-Color Renderer::traceRay(vec2 pixelCoordinate) {
-    vec3 projectedPixel = perspectiveDivide(project(pixelCoordinate));
-    vec3 direction = globalPosition(projectedPixel);
-
-    Ray ray(camera.getPosition(), direction);
-
+Color Renderer::traceRay(Ray ray, int recursions) {
     Object* closestHit = nullptr;
     float closestDistance = FLT_MAX;
     HitPayload hitPayload;
 
     for(int i=0; i<sceneObjects.size(); i++){
-
         Object* object = sceneObjects[i];
         HitPayload payload = object->getIntersection(ray);
         if(payload.hit && payload.hitDistance < closestDistance){
@@ -75,46 +74,63 @@ Color Renderer::traceRay(vec2 pixelCoordinate) {
         }
     }
     if(closestHit != nullptr) {
-        return applyShading(hitPayload);
+        return applyShading(hitPayload, recursions);
     }
-    return {};
+    return Color::GRAY;
 }
 
-Color Renderer::applyShading(HitPayload payload) {
+Color Renderer::applyShading(HitPayload payload, int recursions) {
     vec3 position = payload.position;
     vec3 normal = payload.normal;
     Material material = payload.material;
     int objectIndex = payload.objectIndex;
+    if(objectIndex == 3 and recursions < recursionLimit){
+        volatile int a = 3;
+        a++;
+    }
 
     Color shaded = Color();
     for(Light light : lights) {
 
         vec3 lightDirection = light.position - position;
-
         float distance = length(lightDirection);
         lightDirection = lightDirection/distance;
+        Color ambient = light.color * material.ambient;
 
-        bool occluded = false;
+        vec3 eye = normalize(camera.getPosition() - position);
+        vec3 reflection = reflect(eye, normal);
+        Color reflective;
+        if(material.reflectivity > 0.0 and recursions > 0){
+            recursions--;
+            Ray ray(position, reflection);
+            reflective = material.reflectivity * traceRay(ray, recursions);
+        }
+
         Ray lightRay(position, lightDirection);
-        for(int i=0; i < sceneObjects.size() - 1; i++){
+        bool occluded = false;
+        for(int i=0; i < sceneObjects.size(); i++){
             if(objectIndex == i) continue;
-            occluded = sceneObjects[i]->checkIntersection(lightRay);
-            if(occluded) break;
+            if(sceneObjects[i]->checkIntersection(lightRay)) {
+                shaded += ambient + reflective;
+                occluded = true;
+            }
         }
         if(occluded) continue;
 
-        vec3 eye = normalize(camera.getPosition() - position);
-        vec3 reflection = reflect(-lightDirection, normal);
+        Color diffuse;
+        Color specular;
+        float attenuation = 0.0f;
 
-        float attenuation = min(1.0f, 1.0f/(distance * distance * DISTANCE_FACTOR));
+        vec3 lightReflection = reflect(-lightDirection, normal);
+        if(dot(normal, lightDirection) >= 0){
+            attenuation = min(1.0f, 1.0f/(distance * distance * DISTANCE_FACTOR));
+            diffuse = material.diffuse *
+                      dot(normal, normalize(lightDirection));
+            specular = material.specular *
+                       pow(max(dot(eye, lightReflection), 0.0f), material.shininess);
+        }
 
-        Color ambient = light.color * material.ambient;
-        Color diffuse = material.diffuse *
-                dot(normal, normalize(lightDirection));
-        Color specular = material.specular *
-                pow(max(dot(eye, reflection), 0.0f), material.shininess);
-
-        Color shading = ambient + light.color * attenuation * (diffuse + specular);
+        Color shading = reflective + ambient + light.color * attenuation * (diffuse + specular);
         shading.clamp();
 
         shaded += shading;
@@ -150,41 +166,56 @@ vec3 Renderer::globalPosition(vec3 positionFromCamera) {
 }
 
 void Renderer::addSceneObjects() {
-    vec3 center;
-    float radius;
+    Material metallic = {
+            Color::DARK_GRAY * 0.1f,
+            Color::GRAY,
+            Color::BLACK,
+            100.0f,
+            0.3f
+    };
+
     Material material;
+    float radiusBig = 0.3f, radiusSmall = 0.2f;
+    vec3 center = vec3(0.0f, 0.0f, -1.0f);
+    vec3 left = center, right = center;
+    left.x -= 0.5f;
+    right.x += 0.5f;
+    right.y += 0.1f;
+    center.z -= 0.2f;
 
-    center = vec3(0.2f, 0.1f, -1.0f);
-    radius = 0.3f;
+    material.ambient = Color::GREEN * 0.0f;
+    material.diffuse = Color::GREEN;
+    material.specular = Color::WHITE;
+    material.shininess = 30;
+    material.reflectivity = 0.1f;
+    Object* green = new Sphere(left, radiusSmall, material);
 
-    material.ambient = Color::PURPLE * 0.5f;
+    Object* metal = new Sphere(center, radiusSmall, metallic);
+
+    material.ambient = Color::PURPLE * 0.0f;
     material.diffuse = Color::PURPLE;
     material.specular = Color::WHITE;
-    material.shininess = 32;
-    Object* purple = new Sphere(center, radius, material);
+    Object* purple = new Sphere(right, radiusBig, material);
 
-    center = vec3(-0.35f, 0.0f, -1.0f);
-    radius = 0.2f;
-    material.ambient = Color::GREEN * 0.5f;
-    material.diffuse = Color::GREEN;
-    Object* white = new Sphere(center, radius, material);
-
-    material.ambient = Color::GRAY * 0.2f;
-    material.diffuse = Color::GRAY;
+    material.ambient = Color::BLACK;
+    material.diffuse = Color::DARK_GRAY * 0.1f;
+    material.reflectivity = 0.2f;
     Object* plane = new Plane(
             vec3(0.0f, -0.2f, 0.0f),
             vec3(0.0, 1.0f, 0.0f),
             material
     );
 
+    sceneObjects.push_back(green);
     sceneObjects.push_back(purple);
-    sceneObjects.push_back(white);
+    sceneObjects.push_back(metal);
     sceneObjects.push_back(plane);
 }
 
 void Renderer::addSceneLights() {
-    Light spotlight = {Color::WHITE, vec3(1.5f, 2.0f, -0.5f)};
-
+    Light spotlight = {Color::WHITE, vec3(-0.2f, 1.0f, 0.0f)};
+    lights.push_back(spotlight);
+    spotlight.position.x += 2.0f;
     lights.push_back(spotlight);
 }
 
@@ -198,5 +229,4 @@ Camera &Renderer::getCamera() {
 
 void Renderer::setCameraDirection(vec3 direction) {
     camera.direction = direction;
-    updateView();
 }

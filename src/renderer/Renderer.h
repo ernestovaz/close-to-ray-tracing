@@ -24,6 +24,7 @@ typedef struct light {
 class Renderer {
 public:
     vec2 scale = vec2(1.0f);
+    uint recursionLimit = 2;
 
     Renderer();
     ~Renderer();
@@ -44,8 +45,8 @@ private:
     mat4 inverseView;
     mat4 inverseProjection;
 
-    Color traceRay(vec2 pixelCoordinate);
-    Color applyShading(HitPayload payload);
+    Color traceRay(Ray ray, int recursions);
+    Color applyShading(HitPayload payload, int recursions);
 
     void addSceneObjects();
     void addSceneLights();

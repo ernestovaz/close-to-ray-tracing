@@ -12,13 +12,13 @@ Plane::Plane(vec3 position, vec3 normal, Material material)
 
 HitPayload Plane::getIntersection(Ray ray) {
     double denominator = dot(normal, ray.direction);
-    if(fabs(denominator) > 1e-15){
+    if(fabs(denominator) > 1e-8f){
         float hitDistance = dot((position - ray.origin), normal) / denominator;
-        if(hitDistance >= 0) {
+        if(hitDistance > 0.01f) {
             HitPayload payload;
             payload.hit = true;
             payload.hitDistance = hitDistance;
-            payload.position = ray.direction * hitDistance;
+            payload.position = ray.origin + ray.direction * hitDistance;
             payload.normal = normal;
             payload.material = material;
 
@@ -30,9 +30,9 @@ HitPayload Plane::getIntersection(Ray ray) {
 
 bool Plane::checkIntersection(Ray ray) {
     double denominator = dot(normal, ray.direction);
-    if(fabs(denominator) > 1e-15){
+    if(fabs(denominator) > 1e-8f) {
         float hitDistance = dot((position - ray.origin), normal) / denominator;
-        if(hitDistance >= 0) return true;
+        if (hitDistance > 0.01f) return true;
     }
     return false;
 }

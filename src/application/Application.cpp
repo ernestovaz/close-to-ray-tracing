@@ -25,6 +25,8 @@ Application::Application(int width, int height)
 }
 
 Application::~Application() {
+    deleteTexture();
+
     ImGui_ImplSDLRenderer_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();

@@ -11,9 +11,10 @@ typedef struct material {
     Color specular;
     Color ambient;
 
-    float shininess;
-    float reflectivity;
+    float shininess = 0.0f;
+    float reflectivity = 0.0f;
 } Material;
+
 
 typedef struct hit_payload {
     bool hit = false;
@@ -34,3 +35,4 @@ public:
     virtual HitPayload getIntersection(Ray ray) = 0;
     virtual bool checkIntersection(Ray ray) = 0;
 };
+
